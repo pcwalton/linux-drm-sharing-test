@@ -154,75 +154,6 @@ void setup_dri2(xcb_connection_t *conn,
     *buffer_pitch = buffers[0].pitch;
 }
 
-#if 0
-void setup_egl(EGLNativeDisplayType native_display,
-               EGLNativeWindowType native_window,
-               EGLDisplay *dpy,
-               EGLConfig *config,
-               EGLContext *ctx,
-               EGLSurface *surface) {
-    eglBindAPI(EGL_OPENGL_API);
-
-    *dpy = eglGetDisplay(native_display);
-    if (*dpy == EGL_NO_DISPLAY) {
-        fprintf(stderr, "couldn't get display\n");
-        exit(1);
-    }
-
-    int a, b;
-    if (!eglInitialize(*dpy, &a, &b)) {
-        fprintf(stderr, "couldn't initialize EGL!\n");
-        exit(1);
-    }
-
-    const char *extensions = eglQueryString(*dpy, EGL_EXTENSIONS);
-    fprintf(stderr, "extensions: %s\n", extensions);
-
-    EGLConfig configs[256];
-    EGLint config_attribs[] = {
-        EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
-        EGL_BUFFER_SIZE, 32,
-        EGL_RED_SIZE, 8,
-        EGL_GREEN_SIZE, 8,
-        EGL_BLUE_SIZE, 8,
-        EGL_ALPHA_SIZE, 8,
-        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-        EGL_NONE
-    };
-    EGLint num_configs;
-    eglChooseConfig(*dpy,
-                    config_attribs,
-                    configs,
-                    sizeof(configs) / sizeof(configs[0]),
-                    &num_configs);
-    if (!num_configs) {
-        fprintf(stderr, "failed to find an EGL config\n");
-        exit(1);
-    }
-    *config = configs[0];
-
-    EGLint context_attribs[] = {
-        EGL_NONE
-    };
-    *ctx = eglCreateContext(*dpy, *config, EGL_NO_CONTEXT, context_attribs);
-    if (!*ctx) {
-        fprintf(stderr, "failed to create an EGL context!\n");
-        exit(1);
-    }
-
-    EGLint surface_attribs[] = {
-        EGL_RENDER_BUFFER, EGL_BACK_BUFFER,
-        EGL_NONE
-    };
-    *surface = eglCreateWindowSurface(*dpy, *config, native_window, surface_attribs);
-    if (!*surface) {
-        fprintf(stderr, "failed to create an EGL surface!\n");
-        exit(1);
-    }
-}
-#endif
-
 void draw(xcb_connection_t *conn,
           xcb_window_t window,
           struct gbm_device *gbm,
@@ -232,46 +163,6 @@ void draw(xcb_connection_t *conn,
           EGLint dest_name,
           EGLint pitch) {
     fprintf(stderr, "drawing to name %d to dest_name %d\n", (int)name, (int)dest_name);
-
-#if 0
-    EGLConfig configs[256];
-    EGLint config_attribs[] = {
-        EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
-        EGL_BUFFER_SIZE, 32,
-        EGL_RED_SIZE, 8,
-        EGL_GREEN_SIZE, 8,
-        EGL_BLUE_SIZE, 8,
-        EGL_ALPHA_SIZE, 8,
-        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-        EGL_NONE
-    };
-    EGLint num_configs;
-    eglChooseConfig(dpy,
-                    config_attribs,
-                    configs,
-                    sizeof(configs) / sizeof(configs[0]),
-                    &num_configs);
-    if (!num_configs) {
-        fprintf(stderr, "failed to find an EGL config\n");
-        exit(1);
-    }
-    EGLConfig config = configs[0];
-#endif
-
-#if 0
-    struct gbm_surface *dest_surface = gbm_surface_create(gbm,
-                                                          400,
-                                                          300,
-                                                          GBM_FORMAT_ARGB8888,
-                                                          0);
-
-    EGLSurface surface = eglCreateWindowSurface(dpy, 0x1234, dest_surface, NULL);
-    if (!surface) {
-        fprintf(stderr, "failed to create EGL surface!\n");
-        exit(1);
-    }
-#endif
 
     if (!eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx)) {
         fprintf(stderr, "failed to make EGL context current!\n");
@@ -335,25 +226,6 @@ void draw(xcb_connection_t *conn,
         exit(1);
     }
 
-#if 0
-    /* Load up the texture from the other process! */
-    int fd = open("/dev/dri/card0", O_RDWR);
-    struct gbm_device *gbm = gbm_create_device(fd);
-    EGLDisplay dpy2 = eglGetDisplay((EGLNativeDisplayType)gbm);
-
-    EGLint major, minor;
-    eglInitialize(dpy2, &major, &minor);
-
-    if (!image) {
-        fprintf(stderr,
-                "failed to create image (%d/%d): %x\n",
-                name,
-                stride,
-                eglGetError());
-        exit(1);
-    }
-#endif
-
     EGLint host_attribs[] = {
         EGL_WIDTH, 400,
         EGL_HEIGHT, 300,
@@ -387,20 +259,7 @@ void draw(xcb_connection_t *conn,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-#if 0
-    char data[400 * 300 * 4] = { 0 };
-    for (int i = 0; i < 400 * 300 * 4; i += 4) {
-        data[i] = 0xff;
-    }
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 400, 300, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
-
-    // EVIL EVIL HACK(pcwalton): Move to the other display!
-    *((EGLDisplay *)image) = dpy;
-#endif
     glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, host_image);
-#if 0
-    *((EGLDisplay *)image) = dpy2;
-#endif
 
     if (glGetError() != GL_NO_ERROR || eglGetError() != EGL_SUCCESS) {
         fprintf(stderr, "failed to texture: %x\n", glGetError());
@@ -450,13 +309,6 @@ void draw(xcb_connection_t *conn,
     xcb_dri2_copy_region_reply_t *copy_region_reply =
         xcb_dri2_copy_region_reply(conn, copy_region_cookie, NULL);
     free(copy_region_reply);
-
-#if 0
-    if (!eglSwapBuffers(dpy, surface)) {
-        fprintf(stderr, "failed to swap buffers: %x\n", eglGetError());
-        exit(1);
-    }
-#endif
 }
 
 void go(xcb_connection_t *conn,
@@ -501,12 +353,6 @@ int main(int argc, char **argv) {
     EGLint dest_name;
     EGLint dest_pitch;
     setup_dri2(x_conn, x_window, &gbm, &dpy, &ctx, &dest_name, &dest_pitch);
-
-#if 0
-    EGLConfig config;
-    EGLSurface surface;
-    setup_egl(x_dpy, x_window, &dpy, &config, &ctx, &surface);
-#endif
 
     go(x_conn, x_window, gbm, dpy, ctx, name, dest_name, dest_pitch);
     return 0;

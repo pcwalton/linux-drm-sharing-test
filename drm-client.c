@@ -19,46 +19,13 @@ int main() {
     EGLint major, minor;
     eglInitialize(dpy, &major, &minor);
 
-#if 0
-    const char *ver = eglQueryString(dpy, EGL_VERSION);
-#endif
-
     const char *extensions = eglQueryString(dpy, EGL_EXTENSIONS);
     fprintf(stderr, "extensions: %s\n", extensions);
-
-#if 0
-    if (!strstr(extensions, "EGL_KHR_surfaceless_context")) {
-        fprintf(stderr, "no surfaceless support, cannot initialize\n");
-        return 1;
-    }
-
-    drmModeRes *resources = drmModeGetResources(fd);
-    if (!resources) {
-        fprintf(stderr, "drmModeGetResources failed\n");
-        return 1;
-    }
-
-    for (int i = 0; i < resources->count_connectors; i++) {
-        drmModeConnector *connector = drmModeGetConnector(fd, 
-    }
-#endif
 
     eglBindAPI(EGL_OPENGL_API);
     EGLContext ctx = eglCreateContext(dpy, NULL, EGL_NO_CONTEXT, NULL);
 
     eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx);
-
-#if 0
-    struct gbm_bo *bo = gbm_bo_create(gbm,
-                                      400,
-                                      300,
-                                      GBM_BO_FORMAT_XRGB8888,
-                                      GBM_BO_USE_RENDERING);
-    if (!bo) {
-        fprintf(stderr, "no buffer object created\n");
-        return 1;
-    }
-#endif
 
     EGLint attrib_list[] = {
         EGL_WIDTH, 400,
@@ -72,14 +39,6 @@ int main() {
     if (!image) {
         fprintf(stderr, "couldn't create image!\n");
     }
-
-#if 0
-    EGLImageKHR image = (EGLImageKHR)eglCreateImageKHR(dpy,
-                                                       NULL,
-                                                       EGL_NATIVE_PIXMAP_KHR,
-                                                       bo,
-                                                       NULL);
-#endif
 
     GLuint fb;
     glGenFramebuffers(1, &fb);
