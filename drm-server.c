@@ -244,7 +244,7 @@ void draw(xcb_connection_t *conn,
     }
     fprintf(stderr, "created host EGL image: %p\n", (void *)host_image);
 
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClearColor(1.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glViewport(0, 0, 400, 300);
