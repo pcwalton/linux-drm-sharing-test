@@ -1,0 +1,37 @@
+This is a demonstration of how to use cross-process texture sharing using
+DRI/DRM directly on Linux. The client process (`drm-client`), which is
+intended to have lower privileges, does not need an X connection; you can see
+the resources that it is using with `strace`.
+
+Be warned that, because we are using DRI2, the `drm-client` can access all
+publicly accessible GPU buffers in the system. This should be fixed with DRI3,
+which uses file descriptors instead of global names (see [1]).
+
+Caveats:
+
+* This will *not* work on the NVIDIA blob, because that driver uses GLX instead
+of DRI.
+
+* I make no claims about the security of this solution (other than "it doesn't
+involve a connection to X"); more investigation and possibly work upstream are
+needed.
+
+* This code is awful and is full of memory and resource leaks, so please don't
+copy and paste it anywhere. :)
+
+Demo:
+
+$ make
+
+$ ./drm-client
+OK: name=1342104000
+
+(in another tab)
+
+$ ./drm-server 1342104000
+
+You should see a window with a black background, a blue square, and a white
+triangle.
+
+[1]: http://keithp.com/blogs/DRI-Next/ 
+
